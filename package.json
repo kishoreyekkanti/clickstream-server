@@ -1,0 +1,14 @@
+{
+    "name": "clickstream-server",
+    "description": "click stream server",
+    "version": "0.0.1",
+    "dependencies": {
+        "restify": "*",
+        "request": "^2.34.0",
+        "async": "0.2.10",
+        "moment": "2.4.0",
+        "underscore": "1.6.0",
+        "couchbase": "~0.1.0",
+        "express": "3.4.8"
+    }
+}
