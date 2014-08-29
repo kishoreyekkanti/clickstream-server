@@ -17,7 +17,7 @@ app.use(express.logger({
 app.use(express.urlencoded());
 app.use(express.methodOverride());
 app.use(app.router);
-app.all('*', function(req, res, next) {
+app.all('*', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Credentials", true);
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -35,9 +35,39 @@ var couchConnection = new couchbase.Connection(config, function (err) {
     console.log('Couchbase Connected');
 });
 
+app.post('/click/points/:page_name', function createPoints(req, res) {
+    validateAndSave(req, res, "click")
+});
+app.post('/mouseMove/points/:page_name', function createPoints(req, res) {
+    validateAndSave(req, res,  "move");
+});
+
+app.get('/click/points/:page_name', function (req, res) {
+    getDetails(req, res, "click");
+});
+
+app.get('/mouseMove/points/:page_name', function (req, res) {
+    getDetails(req, res, "move");
+});
+
+app.get('/pages', function (req, res) {
+    couchConnection.get("pages", function (err, result) {
+        res.send(result.value);
+    });
+});
+
+app.get("/pages", function (req, res){
+    var apiToken = req.body.apiToken;
+    couchConnection.get(apiToken+"_pages", function(err, result){
+       res.send(result.value);
+    });
+});
+http.createServer(app).listen(app.get('port'), function () {
+    console.log('Express server listening on port ' + app.get('port'));
+});
 
 function appendPoints(id, points) {
-    couchConnection.append(id, points+",", function (err, result) {
+    couchConnection.append(id, points + ",", function (err, result) {
     })
 }
 function addOrAppend(id, points) {
@@ -54,29 +84,34 @@ function addOrAppend(id, points) {
 
     });
 }
-function savePoints(req, eventSource) {
+function savePoints(req, eventSource, token) {
     var points = req.body.points;
-    var id = req.params.page_name + eventSource;
-    addRequestSource(req);
+    var date = new Date();
+    var dateString = date.getFullYear() + (date.getMonth() + 1) + date.getDate();
+    var id = token + "_" + req.params.page_name + "_" + eventSource + "_" + dateString;
+    addRequestSource(req, token);
     addOrAppend(id, points);
 }
 
-function addRequestSource(req){
+function addRequestSource(req, token) {
     var docUrl = req.body.docUrl;
-    var doc = {};doc[docUrl] = req.params.page_name;
-    couchConnection.add("pages", doc, function(err, result){});
+    var doc = {};
+    doc[docUrl] = req.params.page_name;
+    couchConnection.add(token+"_pages", doc, function (err, result) {
+    });
 }
 
-app.post('/click/points/:page_name', function createPoints(req, res) {
-    savePoints(req, "click");
-    console.dir(req.body);
-    res.send(req.params);
-});
-app.post('/mouseMove/points/:page_name', function createPoints(req, res) {
-    savePoints(req, "move");
-    console.dir(req.body);
-    res.send(req.params);
-});
+function validateAndSave(req, res, action) {
+    var apiToken = req.body.apiToken;
+    return couchConnection.get(apiToken, function (err, result) {
+        if(err || req.body.docUrl.indexOf(result.value.source) < 0 || new Date(result.value.valid_to) < new Date()){
+            res.send('Invalid API Token or Bad Request', 400)
+        }else{
+            savePoints(req, action, req.body.apiToken);
+            res.send(req.params);
+        }
+    });
+}
 
 function getDetails(req, res, event) {
     var output = {};
@@ -85,21 +120,3 @@ function getDetails(req, res, event) {
         res.send(output);
     });
 }
-app.get('/click/points/:page_name', function(req, res){
-    getDetails(req, res, "click");
-});
-
-app.get('/mouseMove/points/:page_name', function(req, res){
-    getDetails(req, res, "move");
-});
-
-app.get('/pages', function(req, res){
-   couchConnection.get("pages", function(err, result){
-      res.send(result.value);
-   });
-});
-
-http.createServer(app).listen(app.get('port'), function () {
-    console.log('Express server listening on port ' + app.get('port'));
-});
-
