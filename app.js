@@ -13,7 +13,7 @@ app.set('http_timeout', 10000);
 app.set('views', path.join(__dirname, 'app/views'));
 var expressHandlebars = require('express3-handlebars');
 app.engine('.hbs', expressHandlebars({
-    defaultLayout: 'main',
+    defaultLayout: 'heat_view',
     extname: '.hbs',
     layoutsDir: 'app/views',
     partialsDir: 'app/views/partials'
@@ -24,6 +24,7 @@ app.enable('view cache');
 app.use(express.compress());
 app.use(express.json());
 app.use(express.cookieParser());
+app.use(express.static(path.join(__dirname, 'static')));
 app.use(express.logger({
         format: ':remote-addr - :date :url :method :http-version :status :response-time :user-agent :referrer'}
 ));
@@ -53,6 +54,12 @@ routes.init(app, couchConnection);
 app.get('/click/points/:page_name', function (req, res) {
     getDetails(req, res, "click");
 });
+//app.get('/heatpoints/:page_name/:action', function (req, res) {
+//    console.log(req.params.page_name);
+//    console.log(req.params.action);
+//    console.log(req.query.apiToken);
+//    res.send("ok");
+//});
 
 app.get('/mouseMove/points/:page_name', function (req, res) {
     getDetails(req, res, "move");

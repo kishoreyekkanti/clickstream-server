@@ -1,0 +1,27 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="styles/foundation.min.css"/>
+    <link rel="stylesheet" type="text/css" href="styles/normalize.css"/>
+    <link rel="stylesheet" type="text/css" href="styles/steram.css"/>
+</head>
+<body>
+<select class="available-pages">
+    <option>Select</option>
+    {{#each content}}
+        <option value="{{this}}">{{@key}}</option>
+    {{/each}}
+</select>
+
+<div class="heatmap-body">
+    <div id="source" class="source-website">
+        <iframe id="webPageFrame" frameborder="0" width="50"
+                style="width: 1252px; height: 1250px"></iframe>
+    </div>
+    <div id="heatmapContainer" class="heatmap-container">
+    </div>
+</div>
+</body>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+<script src="scripts/heatmap.min.js"></script>
+<script src="scripts/main.js"></script>
+</html>

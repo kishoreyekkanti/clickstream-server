@@ -16,10 +16,15 @@ function validateAndSave(req, res, action, couchConnection) {
     });
 }
 
+function getMonth(date) {
+    var month = (date.getMonth() + 1);
+    return  month < 10 ? "0"+month : ""+month;
+}
+
 function savePoints(req, eventSource, token, couchConnection) {
     var points = req.body.points;
     var date = new Date();
-    var dateString = date.getFullYear() + (date.getMonth() + 1) + date.getDate();
+    var dateString = date.getFullYear() + "" + getMonth(date) + "" + date.getDate();
     var id = token + "_" + req.params.page_name + "_" + eventSource + "_" + dateString;
     addRequestSource(req, token, couchConnection);
     addOrAppend(id, points, couchConnection);
@@ -29,7 +34,15 @@ function addRequestSource(req, token, couchConnection) {
     var docUrl = req.body.docUrl;
     var doc = {};
     doc[docUrl] = req.params.page_name;
-    couchConnection.add(token+"_pages", doc, function (err, result) {
+    couchConnection.get(token+"_pages", function(err, result){
+       if(err){
+           couchConnection.add(token+"_pages", doc, function (err, result) {
+           });
+       }else{
+           var dbDoc = result.value;
+           dbDoc[docUrl] = req.params.page_name;
+           couchConnection.set(token+"_pages", dbDoc, function(err, result){});
+       }
     });
 }
 
