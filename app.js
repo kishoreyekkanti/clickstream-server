@@ -3,11 +3,24 @@ var express = require('express');
 var couchbase = require('couchbase');
 var app = express();
 var http = require('http');
+var path = require('path');
+var routes = require('./routes');
 
 app.set('port', process.env.PORT || '3000');
 app.set('trust proxy', true);
 app.set('http_timeout', 10000);
 
+app.set('views', path.join(__dirname, 'app/views'));
+var expressHandlebars = require('express3-handlebars');
+app.engine('.hbs', expressHandlebars({
+    defaultLayout: 'main',
+    extname: '.hbs',
+    layoutsDir: 'app/views',
+    partialsDir: 'app/views/partials'
+}));
+
+app.set('view engine', '.hbs');
+app.enable('view cache');
 app.use(express.compress());
 app.use(express.json());
 app.use(express.cookieParser());
@@ -35,12 +48,7 @@ var couchConnection = new couchbase.Connection(config, function (err) {
     console.log('Couchbase Connected');
 });
 
-app.post('/click/points/:page_name', function createPoints(req, res) {
-    validateAndSave(req, res, "click")
-});
-app.post('/mouseMove/points/:page_name', function createPoints(req, res) {
-    validateAndSave(req, res,  "move");
-});
+routes.init(app, couchConnection);
 
 app.get('/click/points/:page_name', function (req, res) {
     getDetails(req, res, "click");
@@ -56,62 +64,15 @@ app.get('/pages', function (req, res) {
     });
 });
 
-app.get("/pages", function (req, res){
+app.get("/pages", function (req, res) {
     var apiToken = req.body.apiToken;
-    couchConnection.get(apiToken+"_pages", function(err, result){
-       res.send(result.value);
+    couchConnection.get(apiToken + "_pages", function (err, result) {
+        res.send(result.value);
     });
 });
 http.createServer(app).listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
 });
-
-function appendPoints(id, points) {
-    couchConnection.append(id, points + ",", function (err, result) {
-    })
-}
-function addOrAppend(id, points) {
-    couchConnection.get(id, {timeout: 15}, function (err, result) {
-        if (err) {
-            couchConnection.add(id, "", function (err, result) {
-                if (!err) {
-                    appendPoints(id, points);
-                }
-            });
-        } else {
-            appendPoints(id, points);
-        }
-
-    });
-}
-function savePoints(req, eventSource, token) {
-    var points = req.body.points;
-    var date = new Date();
-    var dateString = date.getFullYear() + (date.getMonth() + 1) + date.getDate();
-    var id = token + "_" + req.params.page_name + "_" + eventSource + "_" + dateString;
-    addRequestSource(req, token);
-    addOrAppend(id, points);
-}
-
-function addRequestSource(req, token) {
-    var docUrl = req.body.docUrl;
-    var doc = {};
-    doc[docUrl] = req.params.page_name;
-    couchConnection.add(token+"_pages", doc, function (err, result) {
-    });
-}
-
-function validateAndSave(req, res, action) {
-    var apiToken = req.body.apiToken;
-    return couchConnection.get(apiToken, function (err, result) {
-        if(err || req.body.docUrl.indexOf(result.value.source) < 0 || new Date(result.value.valid_to) < new Date()){
-            res.send('Invalid API Token or Bad Request', 400)
-        }else{
-            savePoints(req, action, req.body.apiToken);
-            res.send(req.params);
-        }
-    });
-}
 
 function getDetails(req, res, event) {
     var output = {};
