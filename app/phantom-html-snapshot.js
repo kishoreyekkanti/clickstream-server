@@ -8,7 +8,8 @@ module.exports = {
         var docUrl = req.body.docUrl;
         var width = req.body.width;
         var pathToFile = getFileName();
-        var key = docUrl + "_" + width;
+        var key = docUrl + "_" + getWidthFromRange(width);
+        console.log(key);
         couchConnection.get(key, function (err, result) {
             if (err) {
                 snapshot(docUrl, pathToFile, width, function (err, result) {
@@ -25,6 +26,21 @@ module.exports = {
     }
 };
 
+function getWidthFromRange(width) {
+    var range = [320, 768, 1024, 1280, 1366 , 1440, 1600 , 1680, 1920];
+    range.push(parseInt(width));
+    var sortedRange = range.sort(function (a, b) {return a - b;});
+    console.log(sortedRange);
+    var position = sortedRange.indexOf(parseInt(width));
+    if(position > 0 && position< sortedRange.length){
+        console.log(position, sortedRange[position]);
+        var lowerRange = sortedRange[position] - sortedRange[position - 1];
+        var higherRange = sortedRange[position + 1] - sortedRange[position];
+        return lowerRange < higherRange ? sortedRange[position - 1] : sortedRange[position + 1];
+    }else{
+        return width
+    }
+}
 function saveSnapshotResult(key, pathToFile, couchConnection, callback) {
     var doc = {path: pathToFile};
     couchConnection.set(key, doc, function (err, result) {
@@ -41,16 +57,16 @@ function getFileName() {
     var dateString = date.getFullYear() + "" + appendZeroIfLessThan10(date.getMonth() + 1) + "" + appendZeroIfLessThan10(date.getDate());
     var fileName = crypto.randomBytes(20).toString('hex');
     return "/tmp/" + dateString +"/"+ fileName + ".png";
+//    return "/Users/yekkanti/personalProjects/node_learning/clickstream-server/static/images/" + fileName + ".png";
 }
 function snapshot(url, pathToSaveFile, viewPortWidth, callback) {
     viewPortWidth = viewPortWidth ? viewPortWidth : "1920";
-    console.log(viewPortWidth);
     if (validator.isURL(url)) {
         var childArgs = [
             path.join(__dirname, 'rasterize.js'),
             url,
             pathToSaveFile,
-            viewPortWidth+"px",
+            viewPortWidth + "px",
             1
         ];
 
