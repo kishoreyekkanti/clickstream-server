@@ -7,7 +7,7 @@
     var request = new XMLHttpRequest();
     request.open('POST', url, true);
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-    request.send("points="+points+"&docUrl="+document.URL+"&apiToken=!abcd1234"+"&width="+document.body.clientWidth);
+    request.send("points="+points+"&docUrl="+document.URL+"&apiToken=!abcd1234"+"&width="+document.body.clientWidth+"&height="+window.innerHeight);
     }
 function observeEvents(eventName, url, pointsSource, throttleInterval) {
     var source = Rx.Observable.fromEvent(document, eventName).throttle(throttleInterval);

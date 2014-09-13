@@ -1,7 +1,6 @@
 var page = require('webpage').create(),
     system = require('system'),
     address, output, size;
-console.log(page.settings.userAgent);
 page.settings.userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.94 Safari/537.36";
 if (system.args.length < 3 || system.args.length > 5) {
     console.log('Usage: rasterize.js URL filename [paperwidth*paperheight|paperformat] [zoom]');
@@ -37,6 +36,7 @@ if (system.args.length < 3 || system.args.length > 5) {
         page.zoomFactor = system.args[4];
     }
     page.open(address, function (status) {
+        console.log('address to open', address);
         if (status !== 'success') {
             console.log('Unable to load the address!');
             phantom.exit(1);

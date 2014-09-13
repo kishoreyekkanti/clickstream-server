@@ -7,9 +7,9 @@ module.exports = {
     validateAndCreateSnapshot: function (req, couchConnection, callback) {
         var docUrl = req.body.docUrl;
         var width = req.body.width;
+        var userid = req.body.userId;
         var pathToFile = getFileName();
-        var key = docUrl + "_" + getWidthFromRange(width);
-        console.log(key);
+        var key = userid+"_"+docUrl + "_" + getWidthFromRange(width);
         couchConnection.get(key, function (err, result) {
             if (err) {
                 snapshot(docUrl, pathToFile, width, function (err, result) {
@@ -30,10 +30,8 @@ function getWidthFromRange(width) {
     var range = [320, 768, 1024, 1280, 1366 , 1440, 1600 , 1680, 1920];
     range.push(parseInt(width));
     var sortedRange = range.sort(function (a, b) {return a - b;});
-    console.log(sortedRange);
     var position = sortedRange.indexOf(parseInt(width));
     if(position > 0 && position< sortedRange.length){
-        console.log(position, sortedRange[position]);
         var lowerRange = sortedRange[position] - sortedRange[position - 1];
         var higherRange = sortedRange[position + 1] - sortedRange[position];
         return lowerRange < higherRange ? sortedRange[position - 1] : sortedRange[position + 1];
@@ -42,7 +40,7 @@ function getWidthFromRange(width) {
     }
 }
 function saveSnapshotResult(key, pathToFile, couchConnection, callback) {
-    var doc = {path: pathToFile};
+    var doc = {path: pathToFile, type: "image_paths"};
     couchConnection.set(key, doc, function (err, result) {
         if (!err) {
             callback(null, "success");
@@ -61,7 +59,7 @@ function getFileName() {
 }
 function snapshot(url, pathToSaveFile, viewPortWidth, callback) {
     viewPortWidth = viewPortWidth ? viewPortWidth : "1920";
-    if (validator.isURL(url)) {
+    if (validator.isURL("asdf",url)) {
         var childArgs = [
             path.join(__dirname, 'rasterize.js'),
             url,
