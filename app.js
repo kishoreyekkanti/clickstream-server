@@ -5,7 +5,7 @@ var app = express();
 var http = require('http');
 var path = require('path');
 var routes = require('./routes');
-
+var appConfig = require('./app/config/configuration.js').config([app.get('env')]);
 app.set('port', process.env.PORT || '3000');
 app.set('trust proxy', true);
 app.set('http_timeout', 10000);
@@ -30,6 +30,11 @@ app.use(express.logger({
 ));
 app.use(express.urlencoded());
 app.use(express.methodOverride());
+app.use(function(req, res, next){
+    req.config = appConfig;
+    return next();
+});
+
 app.use(app.router);
 app.all('*', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -37,11 +42,11 @@ app.all('*', function (req, res, next) {
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
-var config = {
+var couchConfig = {
     host: [ "localhost:8091" ],
     bucket: 'clickStream'
 };
-var couchConnection = new couchbase.Connection(config, function (err) {
+var couchConnection = new couchbase.Connection(couchConfig, function (err) {
     if (err) {
         console.error("Failed to connect to cluster: " + err);
         process.exit(1);
@@ -54,13 +59,6 @@ routes.init(app, couchConnection);
 app.get('/click/points/:page_name', function (req, res) {
     getDetails(req, res, "click");
 });
-//app.get('/heatpoints/:page_name/:action', function (req, res) {
-//    console.log(req.params.page_name);
-//    console.log(req.params.action);
-//    console.log(req.query.apiToken);
-//    res.send("ok");
-//});
-
 app.get('/mouseMove/points/:page_name', function (req, res) {
     getDetails(req, res, "move");
 });

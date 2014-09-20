@@ -11,6 +11,7 @@ function validateAndSave(req, res, action, couchConnection) {
             res.send('Invalid API Token or Bad Request', 400)
         } else {
                 req.body.userId = result.value.userid;
+                req.body.fullUrl = req.body.docUrl;
                 req.body.docUrl = req.body.docUrl.substr(0, req.body.docUrl.indexOf("?"));
                 snapshotHandler.validateAndCreateSnapshot(req, couchConnection, function (err, result) {
                 if (!err) {

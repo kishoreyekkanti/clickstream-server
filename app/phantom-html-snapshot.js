@@ -8,13 +8,15 @@ module.exports = {
         var docUrl = req.body.docUrl;
         var width = req.body.width;
         var userid = req.body.userId;
-        var pathToFile = getFileName();
+        var relativePathToFile = getFileName();
+        var absolutePathToFile = req.config.imagePath+relativePathToFile;
+        console.log("absolute", absolutePathToFile);
         var key = userid+"_"+docUrl + "_" + getWidthFromRange(width);
         couchConnection.get(key, function (err, result) {
             if (err) {
-                snapshot(docUrl, pathToFile, width, function (err, result) {
+                snapshot(req.body.fullUrl,absolutePathToFile, width, function (err, result) {
                     if (!err) {
-                        saveSnapshotResult(key, pathToFile, couchConnection, callback);
+                        saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchConnection, callback);
                     } else {
                         callback(err, "failure");
                     }
@@ -39,8 +41,8 @@ function getWidthFromRange(width) {
         return width
     }
 }
-function saveSnapshotResult(key, pathToFile, couchConnection, callback) {
-    var doc = {path: pathToFile, type: "image_paths"};
+function saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchConnection, callback) {
+    var doc = {relativePath: relativePathToFile, absolutePath: absolutePathToFile, type: "image_paths"};
     couchConnection.set(key, doc, function (err, result) {
         if (!err) {
             callback(null, "success");
@@ -54,12 +56,10 @@ function getFileName() {
     var date = new Date();
     var dateString = date.getFullYear() + "" + appendZeroIfLessThan10(date.getMonth() + 1) + "" + appendZeroIfLessThan10(date.getDate());
     var fileName = crypto.randomBytes(20).toString('hex');
-    return "/tmp/" + dateString +"/"+ fileName + ".png";
-//    return "/Users/yekkanti/personalProjects/node_learning/clickstream-server/static/images/" + fileName + ".png";
+    return dateString +"/"+ fileName + ".png";
 }
 function snapshot(url, pathToSaveFile, viewPortWidth, callback) {
     viewPortWidth = viewPortWidth ? viewPortWidth : "1920";
-    if (validator.isURL("asdf",url)) {
         var childArgs = [
             path.join(__dirname, 'rasterize.js'),
             url,
@@ -70,16 +70,15 @@ function snapshot(url, pathToSaveFile, viewPortWidth, callback) {
 
         childProcess.execFile("phantomjs", childArgs, function (err, stdout, stderr) {
             if (err) {
+                console.log("Failed to load "+err);
                 callback(err);
             } else if (stderr) {
+                console.log("Failed to load "+stderr);
                 callback(new Error(stderr));
             }
             else {
+                console.log("Successfully fetched the image for url ",url);
                 callback(null, url + "_" + viewPortWidth, pathToSaveFile);
             }
         });
-    }
-    else {
-        callback(new Error('Invalid URL'));
-    }
 }
