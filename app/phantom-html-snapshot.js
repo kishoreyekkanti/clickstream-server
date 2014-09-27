@@ -10,8 +10,8 @@ module.exports = {
         var userid = req.body.userId;
         var relativePathToFile = getFileName();
         var absolutePathToFile = req.config.imagePath+relativePathToFile;
-        console.log("absolute", absolutePathToFile);
-        var key = userid+"_"+docUrl + "_" + getWidthFromRange(width);
+        var adjustedWidth = getWidthFromRange(width);
+        var key = userid+"_"+docUrl + "_" + adjustedWidth;
         couchConnection.get(key, function (err, result) {
             if (err) {
                 snapshot(req.body.fullUrl,absolutePathToFile, width, function (err, result) {
@@ -22,7 +22,8 @@ module.exports = {
                     }
                 });
             } else {
-                callback(null, "success");
+                console.log("Key already existing and adjusted width is "+adjustedWidth);
+                callback(null, {width:adjustedWidth});
             }
         });
     }
@@ -45,7 +46,9 @@ function saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchCo
     var doc = {relativePath: relativePathToFile, absolutePath: absolutePathToFile, type: "image_paths"};
     couchConnection.set(key, doc, function (err, result) {
         if (!err) {
-            callback(null, "success");
+            var adjustedWidth = key.substr(key.lastIndexOf("_") + 1);
+            console.log("created a new snapshot and the width is "+adjustedWidth);
+            callback(null, {width: adjustedWidth});
         }
     });
 }

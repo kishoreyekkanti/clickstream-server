@@ -10,12 +10,13 @@ function validateAndSave(req, res, action, couchConnection) {
         if (err || req.body.docUrl.indexOf(result.value.hostname) < 0 || new Date(result.value.valid_to) < new Date()) {
             res.send('Invalid API Token or Bad Request', 400)
         } else {
-                req.body.userId = result.value.userid;
-                req.body.fullUrl = req.body.docUrl;
-                req.body.docUrl = req.body.docUrl.substr(0, req.body.docUrl.indexOf("?"));
-                snapshotHandler.validateAndCreateSnapshot(req, couchConnection, function (err, result) {
+            req.body.userId = result.value.userid;
+            req.body.fullUrl = req.body.docUrl;
+            req.body.docUrl = req.body.docUrl.substr(0, req.body.docUrl.indexOf("?"));
+            snapshotHandler.validateAndCreateSnapshot(req, couchConnection, function (err, result) {
                 if (!err) {
-                    savePoints(req, action, couchConnection)
+                    var width = result.width;
+                    savePoints(req, width, action, couchConnection)
                 }
             });
             res.send(req.params);
@@ -28,12 +29,13 @@ function getMonth(date) {
     return  month < 10 ? "0" + month : "" + month;
 }
 
-function savePoints(req, eventSource, couchConnection) {
+function savePoints(req, width, eventSource, couchConnection) {
     var points = req.body.points;
     var userId = req.body.userId;
     var date = new Date();
     var dateString = date.getFullYear() + "" + getMonth(date) + "" + date.getDate();
-    var id = userId + "_" + req.params.page_name + "_" + eventSource + "_" + dateString;
+    console.log("Creating the points with width "+width);
+    var id = userId + "_" + req.params.page_name + "_" + eventSource + "_" + width + "_" + dateString;
     addRequestSource(req, userId, couchConnection);
     addOrAppend(id, points, couchConnection);
 }
