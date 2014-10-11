@@ -33,11 +33,13 @@ function savePoints(req, width, eventSource, couchConnection) {
     var points = req.body.points;
     var userId = req.body.userId;
     var date = new Date();
-    var dateString = date.getFullYear() + "" + getMonth(date) + "" + date.getDate();
-    console.log("Creating the points with width "+width);
+    var dateString = date.getFullYear() + "" + appendZeroIfLessThan10(date.getMonth() + 1) + "" + appendZeroIfLessThan10(date.getDate());
     var id = userId + "_" + req.params.page_name + "_" + eventSource + "_" + width + "_" + dateString;
     addRequestSource(req, userId, couchConnection);
     addOrAppend(id, points, couchConnection);
+}
+function appendZeroIfLessThan10(number) {
+    return  number < 10 ? "0" + number : "" + number;
 }
 
 function addRequestSource(req, userid, couchConnection) {
