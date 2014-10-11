@@ -7,48 +7,57 @@ module.exports = {
     validateAndCreateSnapshot: function (req, couchConnection, callback) {
         var docUrl = req.body.docUrl;
         var width = req.body.width;
+        var height = req.body.height;
         var userid = req.body.userId;
         var relativePathToFile = getFileName();
         var absolutePathToFile = req.config.imagePath+relativePathToFile;
-        var adjustedWidth = getWidthFromRange(width);
-        var key = userid+"_"+docUrl + "_" + adjustedWidth;
+        var adjustedWidthAndHeight = getWidthAndHeightWithInRange(width, height);
+//        var key = userid+"_"+docUrl + "_" + adjustedWidthAndHeight.width+"_"+adjustedWidthAndHeight.height;
+        var key = userid+"_"+docUrl + "_" + adjustedWidthAndHeight.width;
         couchConnection.get(key, function (err, result) {
             if (err) {
-                snapshot(req.body.fullUrl,absolutePathToFile, width, function (err, result) {
+                snapshot(req.body.fullUrl,absolutePathToFile, adjustedWidthAndHeight, function (err, result) {
                     if (!err) {
-                        saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchConnection, callback);
+                        saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchConnection, adjustedWidthAndHeight, callback);
                     } else {
                         callback(err, "failure");
                     }
                 });
             } else {
-                console.log("Key already existing and adjusted width is "+adjustedWidth);
-                callback(null, {width:adjustedWidth});
+                console.log("Key already existing and adjusted width & height is "+adjustedWidthAndHeight.width);
+                callback(null, adjustedWidthAndHeight);
             }
         });
     }
 };
 
-function getWidthFromRange(width) {
-    var range = [320, 768, 1024, 1280, 1366 , 1440, 1600 , 1680, 1920];
-    range.push(parseInt(width));
+function getWidthAndHeightWithInRange(width, height) {
+    var widthRange = [1366, 1024, 1280, 768, 1440, 1920, 320, 1600, 1680, 1360, 1920, 800];
+    var heightRange = [768, 800, 1024, 1024, 900, 1080, 480, 1050, 600, 720, 768, 1200];
+    var adjustedWidth = getInRange(widthRange, width);
+    var adjustedHeight = getInRange(heightRange, height);
+    return {width:adjustedWidth, height: adjustedHeight};
+}
+
+function getInRange(range, value){
+    range.push(parseInt(value));
     var sortedRange = range.sort(function (a, b) {return a - b;});
-    var position = sortedRange.indexOf(parseInt(width));
+    var position = sortedRange.indexOf(parseInt(value));
     if(position > 0 && position< sortedRange.length){
         var lowerRange = sortedRange[position] - sortedRange[position - 1];
         var higherRange = sortedRange[position + 1] - sortedRange[position];
         return lowerRange < higherRange ? sortedRange[position - 1] : sortedRange[position + 1];
     }else{
-        return width
+        return value;
     }
 }
-function saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchConnection, callback) {
+
+function saveSnapshotResult(key, relativePathToFile, absolutePathToFile, couchConnection, adjustedWidthAndHeight, callback) {
     var doc = {relativePath: relativePathToFile, absolutePath: absolutePathToFile, type: "image_paths"};
     couchConnection.set(key, doc, function (err, result) {
         if (!err) {
-            var adjustedWidth = key.substr(key.lastIndexOf("_") + 1);
-            console.log("created a new snapshot and the width is "+adjustedWidth);
-            callback(null, {width: adjustedWidth});
+            console.log("created a new snapshot and adjusted width and height is "+adjustedWidthAndHeight.width+","+adjustedWidthAndHeight.height);
+            callback(null, adjustedWidthAndHeight);
         }
     });
 }
@@ -61,16 +70,16 @@ function getFileName() {
     var fileName = crypto.randomBytes(20).toString('hex');
     return dateString +"/"+ fileName + ".png";
 }
-function snapshot(url, pathToSaveFile, viewPortWidth, callback) {
-    viewPortWidth = viewPortWidth ? viewPortWidth : "1920";
+function snapshot(url, pathToSaveFile, adjustedWidthAndHeight, callback) {
+    adjustedWidthAndHeight.width = adjustedWidthAndHeight.width ? adjustedWidthAndHeight.width : "1920";
         var childArgs = [
             path.join(__dirname, 'rasterize.js'),
             url,
             pathToSaveFile,
-            viewPortWidth + "px",
+            adjustedWidthAndHeight.width + "px",
             1
         ];
-
+        console.log("Started capturing image for url "+url+" with width and height "+adjustedWidthAndHeight.width+","+adjustedWidthAndHeight.height);
         childProcess.execFile("phantomjs", childArgs, function (err, stdout, stderr) {
             if (err) {
                 console.log("Failed to load "+err);
@@ -81,7 +90,7 @@ function snapshot(url, pathToSaveFile, viewPortWidth, callback) {
             }
             else {
                 console.log("Successfully fetched the image for url ",url);
-                callback(null, url + "_" + viewPortWidth, pathToSaveFile);
+                callback(null, url + "_" + adjustedWidthAndHeight, pathToSaveFile);
             }
         });
 }

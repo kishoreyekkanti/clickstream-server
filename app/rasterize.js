@@ -1,3 +1,4 @@
+console.log("Started Rasterizing..");
 var page = require('webpage').create(),
     system = require('system'),
     address, output, size;
