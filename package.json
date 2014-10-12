@@ -11,6 +11,9 @@
         "couchbase": "~0.1.0",
         "express": "3.4.8",
         "express3-handlebars": "0.5.0",
-        "validator": "~3.10.0"
+        "validator": "~3.10.0",
+        "body-parser": "~1.0.0",
+        "multer":"*"
+
     }
 }

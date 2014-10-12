@@ -6,6 +6,7 @@ var http = require('http');
 var path = require('path');
 var routes = require('./routes');
 var appConfig = require('./app/config/configuration.js').config([app.get('env')]);
+var multer  = require('multer');
 app.set('port', process.env.PORT || '3000');
 app.set('trust proxy', true);
 app.set('http_timeout', 10000);
@@ -30,6 +31,8 @@ app.use(express.logger({
 ));
 app.use(express.urlencoded());
 app.use(express.methodOverride());
+//app.use(express.multipart());
+app.use(multer({ dest: './uploads/'}));
 app.use(function(req, res, next){
     req.config = appConfig;
     return next();
@@ -56,25 +59,25 @@ var couchConnection = new couchbase.Connection(couchConfig, function (err) {
 
 routes.init(app, couchConnection);
 
-app.get('/click/points/:page_name', function (req, res) {
-    getDetails(req, res, "click");
-});
-app.get('/mouseMove/points/:page_name', function (req, res) {
-    getDetails(req, res, "move");
-});
-
-app.get('/pages', function (req, res) {
-    couchConnection.get("pages", function (err, result) {
-        res.send(result.value);
-    });
-});
-
-app.get("/pages", function (req, res) {
-    var apiToken = req.body.apiToken;
-    couchConnection.get(apiToken + "_pages", function (err, result) {
-        res.send(result.value);
-    });
-});
+//app.get('/click/points/:page_name', function (req, res) {
+//    getDetails(req, res, "click");
+//});
+//app.get('/mouseMove/points/:page_name', function (req, res) {
+//    getDetails(req, res, "move");
+//});
+//
+//app.get('/pages', function (req, res) {
+//    couchConnection.get("pages", function (err, result) {
+//        res.send(result.value);
+//    });
+//});
+//
+//app.get("/pages", function (req, res) {
+//    var apiToken = req.body.apiToken;
+//    couchConnection.get(apiToken + "_pages", function (err, result) {
+//        res.send(result.value);
+//    });
+//});
 http.createServer(app).listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
 });

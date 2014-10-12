@@ -1,5 +1,6 @@
 var streamHandler = require("./app/controllers/stream_handler.js");
 var heatmapHandler = require("./app/controllers/heatmap_handler.js");
+var uploadHandler = require("./app/controllers/upload_handler.js");
 
 module.exports = {
     init: function(app, couchConnection){
@@ -17,6 +18,8 @@ module.exports = {
         app.get('/heatpoints/:page_name/:action', function (req, res) {
             heatmapHandler.getHeatMap(req, res, couchConnection);
         });
-
+        app.post('/upload', function saveImage(req, res){
+            uploadHandler.upload(req, res, couchConnection);
+        });
     }
 };

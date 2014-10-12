@@ -27,11 +27,57 @@ function trackUserPattern() {
     observeEvents('mousemove', 'http://localhost:3000/mouseMove/points' , mousePoints, 500);
     }
 function renderImage(){
-    html2canvas(document.body,{onrendered: function(canvas){
-    console.log(canvas.toDataURL('image/png'))
-    document.body.appendChild(canvas);
+    html2canvas(document.body,{"background":undefined, onrendered: function(canvas){
+        var dataURL = canvas.toDataURL("image/png"); // or result from FileReader
+        var base64 = dataURL.replace(/^data:[^,]+,/, ""); // cut the beginning
+        var binaryString = window.atob(base64); // decode Base64
+        createFormAndSubmit(dataURL);
+//    var xhr = new XMLHttpRequest;
+//    createSendAsBinaryMethod();
+//    xhr.open('POST', "http://localhost:3000/upload", true);
+//    xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+//    var formData = new FormData();
+        console.log(typeof base64);
+//    formData.append('image',base64, 'someName.png');
+//    xhr.send(formData);
+//    xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+//    xhr.sendAsBinary(binaryString);
+        document.body.appendChild(canvas);
     }});
 }
+
+function createFormAndSubmit(binaryValue){
+    var form = document.createElement("form");
+    var element = document.createElement("input");
+    form.method = "POST";
+    form.enctype = "multipart/form-data";
+    form.action = "http://localhost:3000/upload";
+    form.id = "snapshotForm123";
+    element.type = "hidden";
+    element.name = "snapshotImage";
+    element.value = binaryValue;
+    form.appendChild(element);
+    document.body.appendChild(form);
+    document.getElementById("snapshotForm123").addEventListener("submit",function(event){
+    event.preventDefault();
+    console.log("submitted");
+    });
+form.submit();
+}
+//function createSendAsBinaryMethod(){
+//    if (!XMLHttpRequest.prototype.sendAsBinary) {
+//    XMLHttpRequest.prototype.sendAsBinary = function(sData) {
+//    var nBytes = sData.length, ui8Data = new Uint8Array(nBytes);
+//    for (var nIdx = 0; nIdx < nBytes; nIdx++) {
+//    ui8Data[nIdx] = sData.charCodeAt(nIdx) & 0xff;
+//    }
+///* send as ArrayBufferView...: */
+//this.send(ui8Data);
+///* ...or as ArrayBuffer (legacy)...: this.send(ui8Data.buffer); */
+//};
+//}
+//}
+
 function loadScript(url, callback)
     {
         var newScript = document.createElement('script');
@@ -49,7 +95,7 @@ if(callback){
     newScript.onload = callback;
     }
 }
-//    loadScript('//cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js', renderImage);
+loadScript('//cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js', renderImage);
 loadScript('//cdnjs.cloudflare.com/ajax/libs/rxjs/2.3.0/rx.lite.min.js', trackUserPattern);
 })();
 </script>
